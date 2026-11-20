@@ -6107,18 +6107,39 @@ def _extract_tensor_dict(t: torch.Tensor) -> dict[str, Any]:
 
 
 def build_stream(
+    index: int,
     args: tuple[Any],
     kwargs: dict[Any, Any],
     stream_cls: type[torch.Stream] = torch.Stream,
 ) -> torch.Stream:
+    stream = _reuse_graph_created_object(index, stream_cls)
+    if stream is not None:
+        return stream
     return stream_cls(*args, **kwargs)
 
 
 def build_event(
-    args: tuple[Any], kwargs: dict[Any, Any], event_cls: type[torch.Event] = torch.Event
+    index: int,
+    args: tuple[Any],
+    kwargs: dict[Any, Any],
+    event_cls: type[torch.Event] = torch.Event,
 ) -> torch.Event:
+    event = _reuse_graph_created_object(index, event_cls)
+    if event is not None:
+        return event
     return event_cls(*args, **kwargs)
 
+
+def _reuse_graph_created_object(index: int, typ: type[Any]) -> Any | None:
+    if not torch.cuda.is_available() or not torch.cuda.is_current_stream_capturing():
+        return None
+
+    from torch._dynamo.graph_bytecode_inputs import get_external_object_by_index
+
+    obj = get_external_object_by_index(index)
+    if not isinstance(obj, typ):
+        raise AssertionError(f"expected {typ}, got {type(obj)}")
+    return obj
 
 class FrameState(enum.Enum):
     FRAME_CREATED = -3

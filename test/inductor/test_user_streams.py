@@ -3095,6 +3095,31 @@ class TestStreamCudagraphInteraction(InductorTestCase):
             result = compiled_fn(x, y)
         self.assertTrue(torch.allclose(result, expected, atol=1e-5, rtol=1e-5))
 
+    def test_graph_created_events_with_auxiliary_output(self):
+        """Graph-created events must not be constructed during CUDA capture."""
+        side = torch.cuda.Stream()
+
+        def fn(x, w1, w2):
+            a = torch.nn.functional.silu(x @ w1)
+            start = torch.cuda.Event()
+            start.record()
+            with torch.cuda.stream(side):
+                side.wait_event(start)
+                b = torch.relu(x @ w2) + 0.5
+                done = torch.cuda.Event()
+                done.record()
+            torch.cuda.current_stream().wait_event(done)
+            return a, b
+
+        x = torch.randn(32, 32, device="cuda") * 0.2
+        w1 = torch.randn(32, 32, device="cuda") * 0.2
+        w2 = torch.randn(32, 32, device="cuda") * 0.2
+        expected = fn(x, w1, w2)
+        compiled_fn = torch.compile(fn, mode="reduce-overhead")
+        for _ in range(3):
+            actual = compiled_fn(x, w1, w2)
+        self.assertEqual(actual, expected)
+
 
 instantiate_parametrized_tests(TestStreamUtils)
 instantiate_parametrized_tests(TestWrapperCodegenStreams)

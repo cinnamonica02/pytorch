@@ -749,6 +749,7 @@ class StreamVariable(StreamContextVariable):
                     torch._dynamo.utils.__name__, "build_stream"
                 )
             )
+            codegen.append_output(codegen.create_load_const(index))
             codegen(args)
             codegen(kwargs)
             codegen.append_output(codegen.create_load_const(stream_cls))
@@ -981,6 +982,7 @@ class EventVariable(VariableTracker):
                     torch._dynamo.utils.__name__, "build_event"
                 )
             )
+            codegen.append_output(codegen.create_load_const(index))
             codegen(args)
             codegen(kwargs)
             codegen.append_output(codegen.create_load_const(event_cls))
