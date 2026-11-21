@@ -264,7 +264,7 @@ def launch_build_group_ptrs_from_bases(
             out_ptrs=_to_fake_cute_tensor(ptrs_t),
             out_problem=_to_fake_cute_tensor(probs_t, assumed_align=4),
             out_strides_abc=_to_fake_cute_tensor(strides_t, assumed_align=4),
-            stream=cute.runtime.make_fake_stream(use_tvm_ffi_env_stream=True),
+            stream=cute.runtime.make_fake_stream(),
             options="--enable-tvm-ffi",
         )
 
@@ -273,6 +273,7 @@ def launch_build_group_ptrs_from_bases(
     prep_executor(
         base_A_u64, base_B_u64, base_C_u64,
         input_a_offs, ptrs_t, probs_t, strides_t,
+        stream=stream,
     )
 
     # --- Tensormap workspace per SM ---
@@ -320,7 +321,7 @@ def launch_build_group_ptrs_from_bases(
             total_num_clusters,
             _to_fake_cute_tensor(tensormap_workspace_t),
             max_active_clusters,
-            cute.runtime.make_fake_stream(use_tvm_ffi_env_stream=True),
+            cute.runtime.make_fake_stream(),
             options="--enable-tvm-ffi",
         )
 
@@ -334,6 +335,7 @@ def launch_build_group_ptrs_from_bases(
         strides_t,
         ptrs_t,
         tensormap_workspace_t,
+        stream,
     )
 
 
@@ -426,7 +428,7 @@ def {{kernel_name}}_precompile(precompile_shapes, precompile_strides, precompile
         out_ptrs=_to_fake_cute_tensor(proxy_ptrs),
         out_problem=_to_fake_cute_tensor(proxy_probs, assumed_align=4),
         out_strides_abc=_to_fake_cute_tensor(proxy_strides, assumed_align=4),
-        stream=cute.runtime.make_fake_stream(use_tvm_ffi_env_stream=True),
+        stream=cute.runtime.make_fake_stream(),
         options=compile_options,
     )
 
@@ -494,7 +496,7 @@ def {{kernel_name}}_precompile(precompile_shapes, precompile_strides, precompile
         total_num_clusters,
         _to_fake_cute_tensor(proxy_tensormap),
         max_active_clusters,
-        cute.runtime.make_fake_stream(use_tvm_ffi_env_stream=True),
+        cute.runtime.make_fake_stream(),
         options=compile_options,
     )
 
